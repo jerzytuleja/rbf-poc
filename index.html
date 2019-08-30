@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Vector tiles POC</title>
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.3.0/mapbox-gl.js"></script>
+    <link
+      href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.3.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        left: 15%;
+        top: 0;
+        bottom: 0;
+        width: 85%;
+      }
+      .map-overlay {
+        position: absolute;
+        width: 15%;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+        background-color: #fff;
+        max-height: 100%;
+        overflow: hidden;
+      }
+
+      .map-overlay fieldset {
+        display: none;
+        background: #ddd;
+        border: none;
+        padding: 10px;
+        margin: 0;
+      }
+
+      .map-overlay input {
+        display: block;
+        border: none;
+        width: 100%;
+        border-radius: 3px;
+        padding: 10px;
+        margin: 0;
+      }
+
+      .map-overlay .listing {
+        overflow: auto;
+        max-height: 100%;
+      }
+
+      .map-overlay .listing > * {
+        display: block;
+        padding: 5px 10px;
+        margin: 0;
+      }
+
+      .map-overlay .listing a {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        color: #404;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .map-overlay .listing a.active {
+        font-weight: 500;
+        color: #0000ff;
+      }
+
+      .map-overlay .listing a:last-child {
+        border: none;
+      }
+
+      .map-overlay .listing a:hover {
+        background: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <div class="map-overlay">
+      <fieldset>
+        <input
+          id="feature-filter"
+          type="text"
+          placeholder="Filter results by name"
+        />
+      </fieldset>
+      <div id="feature-listing" class="listing"></div>
+    </div>
+    <script>
+      //const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
+      const CDN = "http://localhost:8080";
+      const API = "http://localhost:8080";
+      const RbfSource = "rbf-source";
+      const RbfLayer = "rbf";
+
+      const roadData = [];
+      let metadata = {};
+
+      const urlParams = new URLSearchParams(location.search)
+
+      let activeRoutes = urlParams.get("route") ? urlParams.get("route").split(",").map((x) => parseInt(x, 10)) : [];
+
+      var allRoutes = [];
+
+      // Create a popup, but don't add it to the map yet.
+      var popup = new mapboxgl.Popup({
+        closeButton: false
+      });
+
+      var filterEl = document.getElementById("feature-filter");
+      var listingEl = document.getElementById("feature-listing");
+
+      function renderListings(routes) {
+        // Clear any existing listings
+        listingEl.innerHTML = "";
+        if (routes.length) {
+          routes.forEach(function(route) {
+            var item = document.createElement("a");
+            item.textContent = route;
+            if (activeRoutes.includes(route)) {
+              item.classList.add("active");
+            }
+            item.addEventListener("click", function() {
+              toggleActiveRoute(route);
+              // Highlight corresponding feature on the map
+              /* popup
+                .setLngLat(feature.geometry.coordinates)
+                .setText(feature.properties.route)
+                .addTo(map); */
+            });
+            listingEl.appendChild(item);
+          });
+
+          // Show the filter input
+          filterEl.parentNode.style.display = "block";
+        } else {
+          var empty = document.createElement("p");
+          empty.textContent = "Drag the map to populate results";
+          listingEl.appendChild(empty);
+
+          // Hide the filter input
+          filterEl.parentNode.style.display = "none";
+        }
+      }
+
+      function toggleActiveRoute(route) {
+
+        if (activeRoutes.includes(route)) {
+          activeRoutes = activeRoutes.filter(e => e !== route);
+          listingEl.querySelector('.active').classList.remove('active');
+        } else {
+          activeRoutes.push(route);
+          listingEl.querySelectorAll('a').forEach((item) => {
+            if ( item.innerHTML === route.toString() ){
+              item.classList.add("active");
+            }
+          });
+        }
+
+        if( activeRoutes.length > 0 ){
+          urlParams.set('route', activeRoutes.join(','));
+        } else {
+          urlParams.delete('route');
+        }
+
+        window.history.replaceState({}, '', location.pathname + '?' + urlParams);
+
+        if( activeRoutes.length ){
+          map.setFilter(RbfLayer, ["in", "route", ...activeRoutes]);
+        } else {
+          map.setFilter(RbfLayer, null);
+        }
+
+
+        fetchRoadData(activeRoutes);
+      }
+
+      function fetchRoadData(routes){
+        if(!routes.length){
+          return;
+        }
+
+        routes.forEach((route) => {
+          if(!roadData[route]){
+            fetch(API + "/api/road/" + route + "/2019-08-28T22:00:00Z")
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              roadData[route] = data;
+              console.log('roadData', roadData);
+            });
+          }
+        });
+      }
+
+      fetch(CDN + "/resource/rbf/tiles/metadata.json")
+        .then(response => {
+          return response.json();
+        })
+        .then(data => {
+          metadata = data;
+          metadata.minzoom = parseInt(metadata.minzoom, 10);
+          metadata.maxzoom = parseInt(metadata.maxzoom, 10);
+          metadata.json = JSON.parse(metadata.json);
+
+          console.log('metadata', metadata);
+
+          allRoutes = metadata.json.tilestats.layers[0].attributes[0].values;
+          renderListings(allRoutes);
+        });
+
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoiZGFlZGhvciIsImEiOiJjamNpd3V5bGQydWt6MndvMnpvdTZvMnBjIn0.UhKKcIfsmdOj3wFgwTEq6g";
+      let map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/light-v10",
+        zoom: 6,
+        center: [-4.954834, 51.801821]
+      });
+      let hoveredStateId = null;
+
+      map.on("load", function() {
+        map.addSource(RbfSource, {
+          type: "vector",
+          tiles: [CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf"],
+          minzoom: metadata.minzoom,
+          maxzoom: metadata.maxzoom,
+          maxBounds: () => {
+            const bbox = metadata.maxBounds.split(",");
+            return [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
+          }
+        });
+
+        map.addLayer({
+          id: RbfLayer,
+          type: "line",
+          source: RbfSource,
+          "source-layer": "geojsonLayer",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round"
+          },
+          paint: {
+            "line-width": {
+              stops: [[5, 1], [10, 5], [15, 10]]
+            },
+            "line-color": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false],
+              "rgba(255, 0, 0, 30)", // red
+              "rgb(235, 139, 52)" // orange
+            ]
+          }
+        });
+
+        if (activeRoutes.length > 0) {
+          map.setFilter(RbfLayer, ["in", "route", ...activeRoutes]);
+
+          fetchRoadData(activeRoutes);
+        }
+
+        filterEl.addEventListener("keyup", function(e) {
+          var value = e.target.value;
+
+          var filtered = allRoutes.filter(route => {
+            let contains = route.toString().includes(value);
+            return !!contains;
+          });
+          // Populate the sidebar with filtered results
+          renderListings(filtered);
+        });
+      });
+
+      map.on("sourcedata", function(e) {
+        if (map.getSource(RbfSource) && map.isSourceLoaded(RbfSource)) {
+          console.log("source loaded!");
+
+          var relatedFeatures = map.querySourceFeatures(RbfSource, {
+            sourceLayer: "geojsonLayer",
+            filter: ["in", "route", activeRoutes.join(",")]
+          });
+
+          relatedFeatures.forEach(feature => {
+            var termal = roadData[routeId].filter(
+              (item, index, list) =>
+                item.thermalsection === feature.properties.thermalsectionid
+            );
+            //console.log(feature, feature.properties, termal[0]);
+            feature.properties["tt"] = termal[0]["tt"];
+
+            //console.log('feature', feature.properties)
+          });
+        }
+      });
+
+      map.on("click", RbfLayer, function(e) {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: [RbfLayer]
+        });
+
+        console.log('features', features);
+
+        console.log(
+          "Click, RouteId",
+          features
+            .map(feature => feature.properties.route)
+            .filter(
+              (item, index, list) => !!item && list.indexOf(item) === index
+            )
+        );
+
+        console.log(
+          "Thermal Section Id",
+          features
+            .map(feature => feature.properties.thermalsectionid)
+            .filter(
+              (item, index, list) => !!item && list.indexOf(item) === index
+            )
+        );
+      });
+
+      map.on("mousemove", RbfLayer, e => {
+        map.getCanvas().style.cursor = "pointer";
+        if (e.features.length > 0) {
+          if (hoveredStateId) {
+            // set the hover attribute to false with feature state
+            map.setFeatureState(
+              {
+                source: RbfSource,
+                sourceLayer: "geojsonLayer",
+                id: hoveredStateId
+              },
+              {
+                hover: false
+              }
+            );
+          }
+
+          hoveredStateId = e.features[0].id;
+          // set the hover attribute to true with feature state
+          map.setFeatureState(
+            {
+              source: RbfSource,
+              sourceLayer: "geojsonLayer",
+              id: hoveredStateId
+            },
+            {
+              hover: true
+            }
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

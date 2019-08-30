@@ -1,0 +1,20 @@
+{
+  "name": "rbf-poc",
+  "version": "1.0.0",
+  "description": "poc of vector tiles for route based forecast on mapbox",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server"
+  },
+  "keywords": [
+    "vector",
+    "tiles"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.17.1",
+    "express-static-gzip": "^2.0.3"
+  }
+}

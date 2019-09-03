@@ -19,19 +19,25 @@ app.use('/resource/rbf/tiles', (req, res, next) => {
 
 });
 
+app.use(express.static('./'));
+
 app.get('/', function(req, res) {
     res.sendFile(path.join(__dirname + '/index.html'));
-});
+  });
+
 
 app.get('/rbf.html', function(req, res) {
     res.sendFile(path.join(__dirname + '/rbf.html'));
 });
 
-app.get('/api/road/:id/:issueDate', function(req, res) {
+app.get('/api/forecast', function(req, res) {
+    res.sendFile(path.join(__dirname + '/api/forecast/' + req.query.road + '.json'));
+});
 
-    res.sendFile(path.join(__dirname + '/api/forecast-road-' + req.params.id + '-'+ req.params.issueDate.replace(/:/g, '') +'.json'));
+app.get('/api/road', function(req, res) {
+    res.sendFile(path.join(__dirname + '/api/road.json'));
 });
 
 app.listen(8080, () => {
-    console.log('open index.html in web browser')
+    console.log('open localhost at port 8080 in web browser')
 });

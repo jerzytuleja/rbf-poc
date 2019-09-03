@@ -14,9 +14,13 @@ app.use('/resource/rbf/tiles', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', '*');
     res.setHeader('Content-Encoding', 'gzip');
-
     return expressGZip('./tiles')(req, res, next);
-
+});
+app.use('/resource/rbf_forecast', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Content-Encoding', 'gzip');
+    return expressGZip('./tiles2')(req, res, next);
 });
 
 app.use(express.static('./'));

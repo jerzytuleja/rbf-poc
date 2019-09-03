@@ -1,5 +1,6 @@
-const CDN = "http://localhost:8080";
+// const CDN = "http://localhost:8080";
 // const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
+const CDN = "https://transport-public-cdn.s3-eu-west-1.amazonaws.com";
 
 const API = "http://localhost:8080/api";
 // const API = "http://10.30.162.7:8080"; // usually Łukasz's server
@@ -88,7 +89,7 @@ function loadAllData() {
 }
 
 function fetchRoadData(routes) {
-  if (!routes.length) {
+  if (!routes.length || window.approach !== 'join') {
     return;
   }
 
@@ -144,42 +145,55 @@ function fetchRoadData(routes) {
 }
 
 function updateLayerStyle() {
-  if (!RbfLayer || !map.getLayer(RbfLayer) || !roadData || !Object.keys(roadData).length) {
-    return;
+  if (window.approach !== 'join') {
+    map.setPaintProperty(RbfLayer, 'line-color', [
+      "interpolate-lab",
+      ["linear"],
+      ["to-number", ["get", "tt"]],
+      0, 'gray',
+      5, 'red',
+      10, 'orange',
+      15, 'yellow',
+      20, 'green'
+    ])
+  } else {
+    if (!RbfLayer || !map.getLayer(RbfLayer) || !roadData || !Object.keys(roadData).length) {
+      return;
+    }
+
+    const newColor = ["match", ["get", "thermalsectionid"]];
+    Object.keys(roadData).forEach((road) => {
+      roadData[road].forEach((section) => {
+        const color =
+          section.tt < 8 ? 'hsl(0, 100%, 50%)' :
+            // section.tt < 9 ? 'hsl(10, 100%, 50%)' :
+            section.tt < 10 ? 'hsl(20, 100%, 50%)' :
+              // section.tt < 11 ? 'hsl(30, 100%, 50%)' :
+              section.tt < 12 ? 'hsl(40, 100%, 50%)' :
+                // section.tt < 13 ? 'hsl(50, 100%, 50%)' :
+                section.tt < 14 ? 'hsl(60, 100%, 50%)' :
+                  // section.tt < 15 ? 'hsl(80, 100%, 50%)' :
+                  'hsl(100, 100%, 50%)';
+
+        newColor.push(
+          section.thermalsection,
+          color
+        )
+      })
+    });
+
+    newColor.push('gray');
+
+    map.setPaintProperty(RbfLayer, 'line-color', [
+      "case",
+      ["boolean", ["feature-state", "hover"], false],
+      "purple",
+      newColor
+    ])
   }
-
-  const newColor = ["match", ["get", "thermalsectionid"]];
-  Object.keys(roadData).forEach((road) => {
-    roadData[road].forEach((section) => {
-      const color =
-        section.tt < 8 ? 'hsl(0, 100%, 50%)' :
-          // section.tt < 9 ? 'hsl(10, 100%, 50%)' :
-          section.tt < 10 ? 'hsl(20, 100%, 50%)' :
-            // section.tt < 11 ? 'hsl(30, 100%, 50%)' :
-            section.tt < 12 ? 'hsl(40, 100%, 50%)' :
-              // section.tt < 13 ? 'hsl(50, 100%, 50%)' :
-              section.tt < 14 ? 'hsl(60, 100%, 50%)' :
-                // section.tt < 15 ? 'hsl(80, 100%, 50%)' :
-                'hsl(100, 100%, 50%)';
-
-      newColor.push(
-        section.thermalsection,
-        color
-      )
-    })
-  });
-
-  newColor.push('gray');
-
-  map.setPaintProperty(RbfLayer, 'line-color', [
-    "case",
-    ["boolean", ["feature-state", "hover"], false],
-    "purple",
-    newColor
-  ])
 }
 
-fetch(CDN + "/resource/rbf/tiles/metadata.json")
+fetch(window.approach === 'join' ? CDN + "/resource/rbf/tiles/metadata.json" : CDN + '/resource/rbf_forecast/metadata.json')
   .then(response => {
     return response.json();
   })
@@ -221,7 +235,7 @@ let hoveredStateId = null;
 map.on("load", function () {
   map.addSource(RbfSource, {
     type: "vector",
-    tiles: [CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf"],
+    tiles: [window.approach === 'join' ? CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf" : CDN + "/resource/rbf_forecast/{z}/{x}/{y}.pbf"],
     minzoom: metadata.minzoom,
     maxzoom: metadata.maxzoom,
     maxBounds: () => {

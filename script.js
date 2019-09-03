@@ -1,6 +1,9 @@
-const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
+const CDN = "http://localhost:8080";
+// const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
+
 const API = "http://localhost:8080/api";
-// const API = "http://10.30.162.7:8080";
+// const API = "http://10.30.162.7:8080"; // usually Łukasz's server
+
 const RbfSource = "rbf-source";
 const RbfLayer = "rbf";
 const useExternalApi = !API.includes('localhost');

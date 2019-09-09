@@ -1,0 +1,14 @@
+{
+"name": "/data/output",
+"description": "/data/output",
+"version": "2",
+"minzoom": "0",
+"maxzoom": "13",
+"center": "-4.636230,55.615587,13",
+"bounds": "-8.186327,50.232082,1.288392,55.998911",
+"type": "overlay",
+"format": "pbf",
+"generator": "tippecanoe v1.34.3",
+"generator_options": "tippecanoe -e /data/output -f -l geojsonLayer -zg --drop-densest-as-needed --simplify-only-low-zooms --no-tile-stats '--exclude=thermalsectionid' /data/source.json",
+"json": "{\"vector_layers\": [ { \"id\": \"geojsonLayer\", \"description\": \"\", \"minzoom\": 0, \"maxzoom\": 13, \"fields\": {\"par1_1\": \"Number\", \"par1_2\": \"Number\", \"par1_3\": \"Number\", \"par1_4\": \"Number\", \"par1_5\": \"Number\", \"par2_1\": \"Number\", \"par2_2\": \"Number\", \"par2_3\": \"Number\", \"par2_4\": \"Number\", \"par2_5\": \"Number\", \"par3_1\": \"Number\", \"par3_2\": \"Number\", \"par3_3\": \"Number\", \"par3_4\": \"Number\", \"par3_5\": \"Number\", \"par4_1\": \"Number\", \"par4_2\": \"Number\", \"par4_3\": \"Number\", \"par4_4\": \"Number\", \"par4_5\": \"Number\", \"param1_1\": \"Number\", \"param1_2\": \"Number\", \"param1_3\": \"Number\", \"param1_4\": \"Number\", \"param1_5\": \"Number\", \"param2_1\": \"Number\", \"param2_2\": \"Number\", \"param2_3\": \"Number\", \"param2_4\": \"Number\", \"param2_5\": \"Number\", \"param3_1\": \"Number\", \"param3_2\": \"Number\", \"param3_3\": \"Number\", \"param3_4\": \"Number\", \"param3_5\": \"Number\", \"param4_1\": \"Number\", \"param4_2\": \"Number\", \"param4_3\": \"Number\", \"param4_4\": \"Number\", \"param4_5\": \"Number\", \"parameter1_1\": \"Number\", \"parameter1_2\": \"Number\", \"parameter1_3\": \"Number\", \"parameter1_4\": \"Number\", \"parameter1_5\": \"Number\", \"parameter2_1\": \"Number\", \"parameter2_2\": \"Number\", \"parameter2_3\": \"Number\", \"parameter2_4\": \"Number\", \"parameter2_5\": \"Number\", \"parameter3_1\": \"Number\", \"parameter3_2\": \"Number\", \"parameter3_3\": \"Number\", \"parameter3_4\": \"Number\", \"parameter3_5\": \"Number\", \"parameter4_1\": \"Number\", \"parameter4_2\": \"Number\", \"parameter4_3\": \"Number\", \"parameter4_4\": \"Number\", \"parameter4_5\": \"Number\", \"route\": \"Number\", \"slope\": \"Number\", \"tt\": \"Number\"} } ]}"
+}

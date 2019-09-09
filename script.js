@@ -1,6 +1,5 @@
-// const CDN = "http://localhost:8080";
+const CDN = "http://localhost:8080";
 // const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
-const CDN = "https://transport-public-cdn.s3-eu-west-1.amazonaws.com";
 
 const API = "http://localhost:8080/api";
 // const API = "http://10.30.162.7:8080"; // usually Łukasz's server
@@ -9,8 +8,9 @@ const RbfSource = "rbf-source";
 const RbfLayer = "rbf";
 const useExternalApi = !API.includes('localhost');
 
+let mapLoaded = false;
 const roadData = {};
-let metadata = {};
+let metadata;
 const urlParams = new URLSearchParams(location.search)
 let activeRoutes = urlParams.get("route") ? urlParams.get("route").split(",").map((x) => parseInt(x, 10)) : [];
 var allRoutes = [];
@@ -147,14 +147,19 @@ function fetchRoadData(routes) {
 function updateLayerStyle() {
   if (window.approach !== 'join') {
     map.setPaintProperty(RbfLayer, 'line-color', [
-      "interpolate-lab",
-      ["linear"],
-      ["to-number", ["get", "tt"]],
-      0, 'gray',
-      5, 'red',
-      10, 'orange',
-      15, 'yellow',
-      20, 'green'
+      "case",
+      ["boolean", ["feature-state", "hover"], false],
+      "purple",
+      [
+        "interpolate-lab",
+        ["linear"],
+        ["to-number", ["get", "tt"]],
+        0, 'gray',
+        5, 'red',
+        15, 'orange',
+        16, 'yellow',
+        17, 'green'
+      ]
     ])
   } else {
     if (!RbfLayer || !map.getLayer(RbfLayer) || !roadData || !Object.keys(roadData).length) {
@@ -193,7 +198,13 @@ function updateLayerStyle() {
   }
 }
 
-fetch(window.approach === 'join' ? CDN + "/resource/rbf/tiles/metadata.json" : CDN + '/resource/rbf_forecast/metadata.json')
+fetch(
+  window.approach === 'join' ?
+    CDN + "/resource/rbf/tiles/metadata.json" :
+    window.approach === 'data-driven-with-timeline' ?
+      CDN + "/resource/rbf_forecast3/metadata.json" :
+      CDN + '/resource/rbf_forecast/metadata.json'
+)
   .then(response => {
     return response.json();
   })
@@ -217,31 +228,32 @@ fetch(window.approach === 'join' ? CDN + "/resource/rbf/tiles/metadata.json" : C
           .sort((a, b) => a - b);
         // .filter((routeId) => tileRoutes.includes(routeId));
 
+        console.log('roads', data);
+
         renderListings(allRoutes);
+        addLayer();
         // fetchRoadData(allRoutes);
       });
   });
 
-mapboxgl.accessToken =
-  "pk.eyJ1IjoiZGFlZGhvciIsImEiOiJjamNpd3V5bGQydWt6MndvMnpvdTZvMnBjIn0.UhKKcIfsmdOj3wFgwTEq6g";
-let map = new mapboxgl.Map({
-  container: "map",
-  style: "mapbox://styles/mapbox/light-v10",
-  zoom: 6,
-  center: [-4.954834, 51.801821]
-});
-let hoveredStateId = null;
+addLayer = () => {
+  if(!(mapLoaded && metadata)) {
+    return;
+  }
+  const bbox = metadata.bounds.split(",").map((bound) => parseFloat(bound, 10));
 
-map.on("load", function () {
   map.addSource(RbfSource, {
     type: "vector",
-    tiles: [window.approach === 'join' ? CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf" : CDN + "/resource/rbf_forecast/{z}/{x}/{y}.pbf"],
+    tiles: [
+      window.approach === 'join' ?
+        CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf" :
+        window.approach === 'data-driven-with-timeline' ?
+          CDN + "/resource/rbf_forecast3/{z}/{x}/{y}.pbf" :
+          CDN + "/resource/rbf_forecast/{z}/{x}/{y}.pbf"
+    ],
     minzoom: metadata.minzoom,
     maxzoom: metadata.maxzoom,
-    maxBounds: () => {
-      const bbox = metadata.maxBounds.split(",");
-      return [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
-    }
+    bounds: bbox
   });
 
   map.addLayer({
@@ -254,13 +266,30 @@ map.on("load", function () {
       "line-cap": "round"
     },
     paint: {
-      "line-width": {
-        stops: [[5, 1], [10, 5], [15, 10]]
-      },
+      "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 5, 0.75, 18, 32],
       "line-color": 'gray'
-    }
+    },
+    bounds: bbox
   });
+
+  map.fitBounds(metadata.bounds.split(','), { padding: 100 })
   updateLayerStyle();
+  map.showTileBoundaries = true;
+}
+
+mapboxgl.accessToken =
+  "pk.eyJ1IjoiZGFlZGhvciIsImEiOiJjamNpd3V5bGQydWt6MndvMnpvdTZvMnBjIn0.UhKKcIfsmdOj3wFgwTEq6g";
+let map = new mapboxgl.Map({
+  container: "map",
+  style: "mapbox://styles/mapbox/light-v10",
+  zoom: 6,
+  center: [-4.954834, 51.801821]
+});
+let hoveredStateId = null;
+
+map.on("load", function () {
+  mapLoaded = true;
+  addLayer();
 
   if (activeRoutes.length > 0) {
     map.setFilter(RbfLayer, ["in", "route", ...activeRoutes]);

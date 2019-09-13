@@ -1,7 +1,8 @@
-const CDN = "http://localhost:8080";
-// const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
+//const CDN = "http://localhost:9080";
+const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
 
-const API = "http://localhost:8080/api";
+const API = "https://d3ex4p301q2zn9.cloudfront.net/api";
+//const API = "http://localhost:9080/api";
 // const API = "http://10.30.162.7:8080"; // usually Łukasz's server
 
 const RbfSource = "rbf-source";
@@ -12,8 +13,20 @@ let mapLoaded = false;
 const roadData = {};
 let metadata;
 const urlParams = new URLSearchParams(location.search)
-let activeRoutes = urlParams.get("route") ? urlParams.get("route").split(",").map((x) => parseInt(x, 10)) : [];
-var allRoutes = [];
+let activeCustomers = urlParams.get("customer") ? urlParams.get("customer").split(",").map((x) => parseInt(x, 10)) : [];
+let allCustomers = [];
+let allRoutes = [];
+
+const generatedCustomers = [5781,5662,5625,4903,4841,4840,2082,2081,2080,2060,1378,1175,1141,1059,946,198,177,131,129,124,92,1];
+
+
+const timeseriesSize = 24;
+const parameters = ['ts', 'cs', 't', 'c'];
+let activeTimeserie = 0;
+let activeParameter = 't';
+let refreshIntervalId;
+let isAnimating = false;
+const animationSpeed = 500;
 
 // Create a popup, but don't add it to the map yet.
 var popup = new mapboxgl.Popup({
@@ -21,23 +34,27 @@ var popup = new mapboxgl.Popup({
 });
 var filterEl = document.getElementById("feature-filter");
 var listingEl = document.getElementById("feature-listing");
+var timelineEl = document.getElementById("feature-timeline");
+var selectorEl = document.getElementById("feature-selector");
 
-function renderListings(routes) {
+function renderListings(customers) {
   // Clear any existing listings
   listingEl.innerHTML = "";
-  if (routes.length) {
-    routes.forEach(function (route) {
+  if (customers.length) {
+    customers.forEach(function (customer) {
       var item = document.createElement("a");
-      item.textContent = route;
-      if (activeRoutes.includes(route)) {
+      item.dataset.customerId = customer.customerId;
+      item.textContent = customer.customerId + ' - ' + customer.name;
+
+      if (activeCustomers.includes(customer.customerId)) {
         item.classList.add("active");
       }
       item.addEventListener("click", function () {
-        toggleActiveRoute(route);
+        toggleActiveCustomer(customer.customerId);
         // Highlight corresponding feature on the map
         /* popup
           .setLngLat(feature.geometry.coordinates)
-          .setText(feature.properties.route)
+          .setText(feature.properties.customer)
           .addTo(map); */
       });
       listingEl.appendChild(item);
@@ -55,40 +72,41 @@ function renderListings(routes) {
   }
 }
 
-function toggleActiveRoute(route) {
-  if (activeRoutes.includes(route)) {
-    activeRoutes = activeRoutes.filter(e => e !== route);
+function toggleActiveCustomer(customerId) {
+
+  removeLayer();
+  if(listingEl.querySelector('.active')){
     listingEl.querySelector('.active').classList.remove('active');
+  }
+
+  if (activeCustomers.includes(customerId)) {
+    activeCustomers = activeCustomers.filter(e => e !== customerId);
   } else {
-    activeRoutes.push(route);
+    activeCustomers[0] = customerId;
     listingEl.querySelectorAll('a').forEach((item) => {
-      if (item.innerHTML === route.toString()) {
+      if (item.dataset.customerId === customerId.toString()) {
         item.classList.add("active");
       }
     });
+    addLayer(customerId);
   }
 
-  if (activeRoutes.length > 0) {
-    urlParams.set('route', activeRoutes.join(','));
+  if (activeCustomers.length > 0) {
+    urlParams.set('customer', activeCustomers.join(','));
   } else {
-    urlParams.delete('route');
+    urlParams.delete('customer');
   }
 
   window.history.replaceState({}, '', location.pathname + '?' + urlParams);
 
-  if (activeRoutes.length) {
-    map.setFilter(RbfLayer, ["in", "route", ...activeRoutes]);
-  } else {
-    map.setFilter(RbfLayer, null);
-  }
-  fetchRoadData(activeRoutes);
+  //fetchRoadData(activeCustomers);
 }
 
 function loadAllData() {
-  fetchRoadData(allRoutes);
+  fetchRoadData(allCustomers);
 }
 
-function fetchRoadData(routes) {
+function fetchRoadData(customerId, routes) {
   if (!routes.length || window.approach !== 'join') {
     return;
   }
@@ -145,7 +163,18 @@ function fetchRoadData(routes) {
 }
 
 function updateLayerStyle() {
+  const parameter = activeParameter;
+  const offset = activeTimeserie;
+
   if (window.approach !== 'join') {
+    let filter;
+    if( parameter === 'cs' || parameter === 'ts'){
+      filter = parameter;
+    } else {
+      filter = parameter+offset;
+    }
+    console.log(filter);
+
     map.setPaintProperty(RbfLayer, 'line-color', [
       "case",
       ["boolean", ["feature-state", "hover"], false],
@@ -153,16 +182,16 @@ function updateLayerStyle() {
       [
         "interpolate-lab",
         ["linear"],
-        ["to-number", ["get", "tt"]],
-        0, 'gray',
-        5, 'red',
-        15, 'orange',
-        16, 'yellow',
-        17, 'green'
+        ["to-number", ["get", filter]],
+        -10, 'gray',
+        -5, 'red',
+        0, 'orange',
+        10, 'yellow',
+        15, 'green'
       ]
     ])
   } else {
-    if (!RbfLayer || !map.getLayer(RbfLayer) || !roadData || !Object.keys(roadData).length) {
+    if (!(RbfLayer) || !map.getLayer(RbfLayer) || !roadData || !Object.keys(roadData).length) {
       return;
     }
 
@@ -199,83 +228,195 @@ function updateLayerStyle() {
 }
 
 fetch(
-  window.approach === 'join' ?
-    CDN + "/resource/rbf/tiles/metadata.json" :
-    window.approach === 'data-driven-with-timeline' ?
-      CDN + "/resource/rbf_forecast3/metadata.json" :
-      CDN + '/resource/rbf_forecast/metadata.json'
+  API + "/customers.json"
 )
   .then(response => {
     return response.json();
   })
-  .then(data => {
-    metadata = data;
-    metadata.minzoom = parseInt(metadata.minzoom, 10);
-    metadata.maxzoom = parseInt(metadata.maxzoom, 10);
-    metadata.json = JSON.parse(metadata.json);
+  .then(customers => {
+    if (allCustomers.length) {
+      return;
+    }
+    allCustomers = customers.filter((customer) => generatedCustomers.includes(customer.customerId));
+    // allCustomers = customers.map((customerEntry) => customerEntry.customerId)
+    //   .sort((a, b) => a - b);
 
-    console.log('metadata', metadata);
+    console.log('customers', allCustomers);
 
-    fetch(useExternalApi ? `${API}/road` : `${API}/road.json`)
-      .then(response => {
-        return response.json();
-      })
-      .then((data) => {
-        if (allRoutes.length) {
-          return;
-        }
-        allRoutes = data.map((routeEntry) => routeEntry.routeid)
-          .sort((a, b) => a - b);
-        // .filter((routeId) => tileRoutes.includes(routeId));
-
-        console.log('roads', data);
-
-        renderListings(allRoutes);
-        addLayer();
-        // fetchRoadData(allRoutes);
-      });
+    renderListings(allCustomers);
+    // fetchRoadData(allRoutes);
   });
 
-addLayer = () => {
-  if(!(mapLoaded && metadata)) {
+addLayer = (customerId) => {
+  if(!(mapLoaded && !!customerId)) {
     return;
   }
-  const bbox = metadata.bounds.split(",").map((bound) => parseFloat(bound, 10));
+  console.log('addLayer', mapLoaded, customerId);
 
-  map.addSource(RbfSource, {
-    type: "vector",
-    tiles: [
-      window.approach === 'join' ?
-        CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf" :
-        window.approach === 'data-driven-with-timeline' ?
-          CDN + "/resource/rbf_forecast3/{z}/{x}/{y}.pbf" :
-          CDN + "/resource/rbf_forecast/{z}/{x}/{y}.pbf"
-    ],
-    minzoom: metadata.minzoom,
-    maxzoom: metadata.maxzoom,
-    bounds: bbox
-  });
+  fetch(
+    CDN + "/resource/customer-tiles/"+customerId+"/metadata.json"
+    /* window.approach === 'join' ?
+      CDN + "/resource/rbf/tiles/metadata.json" :
+      window.approach === 'data-driven-with-timeline' ?
+        CDN + "/resource/rbf_forecast3/metadata.json" :
+        CDN + '/resource/rbf_forecast/metadata.json' */
+  )
+    .then(response => {
+      return response.json();
+    })
+    .then(data => {
+      metadata = data;
+      metadata.minzoom = parseInt(metadata.minzoom, 10);
+      metadata.maxzoom = parseInt(metadata.maxzoom, 10);
+      metadata.json = JSON.parse(metadata.json);
 
-  map.addLayer({
-    id: RbfLayer,
-    type: "line",
-    source: RbfSource,
-    "source-layer": "geojsonLayer",
-    layout: {
-      "line-join": "round",
-      "line-cap": "round"
-    },
-    paint: {
-      "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 5, 0.75, 18, 32],
-      "line-color": 'gray'
-    },
-    bounds: bbox
-  });
+      console.log('metadata', metadata);
+    })
+    .then(()=>{
+      const bbox = metadata.bounds.split(",").map((bound) => parseFloat(bound, 10));
 
-  map.fitBounds(metadata.bounds.split(','), { padding: 100 })
-  updateLayerStyle();
-  map.showTileBoundaries = true;
+      map.addSource(RbfSource, {
+        type: "vector",
+        tiles: [
+          CDN + "/resource/customer-tiles/"+customerId+"/{z}/{x}/{y}.pbf"
+          // window.approach === 'join' ?
+          //   CDN + "/resource/rbf/tiles/{z}/{x}/{y}.pbf" :
+          //   window.approach === 'data-driven-with-timeline' ?
+          //     CDN + "/resource/rbf_forecast3/{z}/{x}/{y}.pbf" :
+          //     CDN + "/resource/rbf_forecast/{z}/{x}/{y}.pbf"
+        ],
+        minzoom: metadata.minzoom,
+        maxzoom: metadata.maxzoom,
+        bounds: bbox
+      });
+
+      map.addLayer({
+        id: RbfLayer,
+        type: "line",
+        source: RbfSource,
+        "source-layer": "geojsonLayer",
+        layout: {
+          "line-join": "round",
+          "line-cap": "round"
+        },
+        paint: {
+          "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 5, 2, 18, 16],
+          "line-color": 'gray'
+        },
+        bounds: bbox
+      });
+
+      map.fitBounds(metadata.bounds.split(','), { padding: 100 })
+
+      var activeCustomer = allCustomers.filter((customer) => customer.customerId === customerId)[0];
+      fetchRoadData(activeCustomer.customerId, activeCustomer.routes);
+
+      renderTimeline();
+      //renderSelector();
+
+      updateLayerStyle();
+      // map.showTileBoundaries = true;
+    });
 }
+
+
+removeLayer = () => {
+  if(map.getLayer(RbfLayer)){
+    map.removeLayer(RbfLayer);
+    map.removeSource(RbfSource);
+  }
+}
+
+renderSelector = () => {
+  // Clear any existing listings
+  selectorEl.innerHTML = "";
+
+  var select = document.createElement("select");
+  select.addEventListener("selectionchange", function () {
+    activeParameter = 'ts';
+    updateLayerStyle();
+  });
+
+  parameters.forEach(function (param) {
+    var item = document.createElement("option");
+    item.textContent = param;
+    select.appendChild(item);
+  });
+
+  selectorEl.appendChild(select);
+}
+
+renderTimeline = () => {
+  // Clear any existing listings
+  timelineEl.innerHTML = "";
+
+  var play = document.createElement("a");
+  play.classList.add('play');
+  play.addEventListener("click", function () {
+    if( isAnimating ){
+      play.classList.remove('stop');
+    } else {
+      play.classList.add('stop');
+    }
+    animateTimeserie();
+  });
+  timelineEl.appendChild(play);
+
+
+  [...Array(timeseriesSize).keys()].forEach(function (offset) {
+    var item = document.createElement("a");
+    item.dataset.timeoffset = offset;
+    item.textContent = offset;
+
+    if (activeTimeserie == offset) {
+      item.classList.add("active");
+    }
+    item.addEventListener("click", function () {
+      toggleActiveTimeserie(offset);
+      // Highlight corresponding feature on the map
+      /* popup
+        .setLngLat(feature.geometry.coordinates)
+        .setText(feature.properties.customer)
+        .addTo(map); */
+    });
+    timelineEl.appendChild(item);
+  });
+}
+
+function toggleActiveTimeserie(timeserie) {
+
+  if(timelineEl.querySelector('.active')){
+    timelineEl.querySelector('.active').classList.remove('active');
+  }
+
+  timelineEl.querySelector('a[data-timeoffset="'+timeserie+'"]').classList.add('active');
+
+  activeTimeserie = timeserie;
+  updateLayerStyle();
+}
+
+function animateTimeserie() {
+
+  if(isAnimating){
+    clearInterval(refreshIntervalId);
+  } else{
+    refreshIntervalId = setInterval(animate, animationSpeed);
+  }
+
+  isAnimating = !isAnimating;
+}
+
+function animate() {
+
+  if( activeTimeserie === timeseriesSize-1){
+    activeTimeserie = 0;
+    toggleActiveTimeserie(activeTimeserie);
+  } else{
+    toggleActiveTimeserie(activeTimeserie+1);
+  }
+
+}
+
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoiZGFlZGhvciIsImEiOiJjamNpd3V5bGQydWt6MndvMnpvdTZvMnBjIn0.UhKKcIfsmdOj3wFgwTEq6g";
@@ -287,20 +428,21 @@ let map = new mapboxgl.Map({
 });
 let hoveredStateId = null;
 
+
 map.on("load", function () {
   mapLoaded = true;
-  addLayer();
 
-  if (activeRoutes.length > 0) {
-    map.setFilter(RbfLayer, ["in", "route", ...activeRoutes]);
-    fetchRoadData(activeRoutes);
+  if (activeCustomers.length > 0) {
+    activeCustomers.forEach(customerId => {
+      addLayer(customerId);
+    });
   }
 
   filterEl.addEventListener("keyup", function (e) {
     var value = e.target.value;
 
-    var filtered = allRoutes.filter(route => {
-      let contains = route.toString().includes(value);
+    var filtered = allCustomers.filter(customer => {
+      let contains = customer.name.includes(value) || customer.customerId.toString().includes(value);
       return !!contains;
     });
     // Populate the sidebar with filtered results

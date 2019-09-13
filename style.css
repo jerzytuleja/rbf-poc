@@ -69,7 +69,7 @@ body {
 
 .map-overlay .listing a.active {
   font-weight: 500;
-  color: #0000ff;
+  background: #32beff;
 }
 
 .map-overlay .listing a:last-child {
@@ -77,5 +77,71 @@ body {
 }
 
 .map-overlay .listing a:hover {
+  background: #f0f0f0;
+}
+
+.feature-controls {
+  position: absolute;
+  /* width: 50%; */
+  height: 36px;
+  bottom: 5%;
+  left: 20%;
+  right: 5%;
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  background-color: #fff;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.19);
+}
+
+.feature-controls .selector select {
+  margin: 5px;
+  height: 25px;
+  width: 50px;
+}
+
+.feature-controls .timeline {
+  max-height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.feature-controls .timeline > * {
+  padding: 2px 5px;
+  margin: 5px;
+}
+
+.feature-controls .timeline a {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #404;
+  text-decoration: none;
+  cursor: pointer;
+  width: 25px;
+  height: 25px;
+  display: block;
+  text-align: center;
+}
+
+.feature-controls .timeline a.play:before {
+  content: "\25BA";
+  display: inline-block;
+  text-align: center;
+}
+
+.feature-controls .timeline a.stop:before {
+  content: "\25A0";
+  display: inline-block;
+}
+
+.feature-controls .timeline a.active {
+  font-weight: 500;
+  background: #32beff;
+}
+
+.feature-controls .timeline a:hover {
   background: #f0f0f0;
 }

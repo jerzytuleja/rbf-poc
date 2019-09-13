@@ -26,6 +26,16 @@ app.use('/resource/rbf_forecast3', (req, res, next) => {
     return expressGZip('./ddtiles')(req, res, next);
 });
 
+app.get('/resource/customer-tiles/:customerId/metadata.json', function(req, res) {
+  res.sendFile(path.join(__dirname + '/customer-tiles/'+req.params.customerId+'/metadata.json'));
+});
+app.use('/resource/customer-tiles', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Content-Encoding', 'gzip');
+    return expressGZip('./customer-tiles')(req, res, next);
+});
+
 app.use(express.static('./'));
 
 app.get('/', function(req, res) {
@@ -45,6 +55,10 @@ app.get('/api/road', function(req, res) {
     res.sendFile(path.join(__dirname + '/api/road.json'));
 });
 
-app.listen(8080, () => {
-    console.log('open localhost at port 8080 in web browser')
+app.get('/api/customers', function(req, res) {
+  res.sendFile(path.join(__dirname + '/api/customers.json'));
+});
+
+app.listen(9080, () => {
+    console.log('open localhost at port 9080 in web browser')
 });

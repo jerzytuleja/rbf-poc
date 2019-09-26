@@ -1,0 +1,12 @@
+[
+	{
+    "customerId" : 92,
+    "name" : "DAR Milieudiensten N.V. (Gem. Nijmegen)",
+    "routes" : [494]
+  },
+  {
+    "customerId" : 124,
+    "name" : "Hoogheemraadschap van Schieland en de Krimpenerwaard",
+    "routes" : [385,386,387,388,384]
+  }
+]

@@ -1,8 +1,8 @@
-//const CDN = "http://localhost:9080";
+//const CDN = "https://localhost:9080";
 const CDN = "https://d3ex4p301q2zn9.cloudfront.net";
 
 const API = "https://d3ex4p301q2zn9.cloudfront.net/api";
-//const API = "http://localhost:9080/api";
+//const API = "https://localhost:9080/api";
 // const API = "http://10.30.162.7:8080"; // usually Łukasz's server
 
 const RbfSource = "rbf-source";
@@ -17,8 +17,7 @@ let activeCustomers = urlParams.get("customer") ? urlParams.get("customer").spli
 let allCustomers = [];
 let allRoutes = [];
 
-const generatedCustomers = [5781,5662,5625,4903,4841,4840,2082,2081,2080,2060,1378,1175,1141,1059,946,198,177,131,129,124,92,1];
-
+//const generatedCustomers = [5781,5662,5625,4903,4841,4840,2082,2081,2080,2060,1378,1175,1141,1059,946,198,177,131,129,124,92,1];
 
 const timeseriesSize = 24;
 const parameters = ['ts', 'cs', 't', 'c'];
@@ -237,7 +236,8 @@ fetch(
     if (allCustomers.length) {
       return;
     }
-    allCustomers = customers.filter((customer) => generatedCustomers.includes(customer.customerId));
+    allCustomers = customers;
+    //allCustomers = customers.filter((customer) => generatedCustomers.includes(customer.customerId));
     // allCustomers = customers.map((customerEntry) => customerEntry.customerId)
     //   .sort((a, b) => a - b);
 

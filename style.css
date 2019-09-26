@@ -145,3 +145,110 @@ body {
 .feature-controls .timeline a:hover {
   background: #f0f0f0;
 }
+
+.series-controls {
+  position: absolute;
+  /* width: 50%; */
+  height: 36px;
+  top: 3%;
+  left: 17%;
+  font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+  background-color: #fff;
+  max-height: 100%;
+}
+
+.series-controls .series {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 1px 1px 2px 0px rgba(0,0,0,0.19);
+}
+
+.series-controls .series .serie {
+  display: flex;
+  align-items: center;
+  height: 25px;
+  margin: 2px;
+  padding: 3px;
+}
+
+.series-controls .series .serie.active {
+  font-weight: 500;
+  background: #ade5ff;
+}
+
+.series-controls .series .serie:hover {
+  background: #f0f0f0;
+}
+
+
+.series-controls .series .serie input {
+  background-color: transparent;
+  display: inline-block;
+  width: 80px;
+  position: relative;
+  margin: 0 10px;
+  cursor: ew-resize;
+}
+
+.series-controls .series .serie label {
+
+}
+
+.series-controls .series .serie > span {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  height: 10px;
+  width: 10px;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+
+.series-controls .series .serie a {
+  text-transform: capitalize;
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 2px 5px;
+  display: inline-block;
+  text-align: center;
+}
+
+.series-controls .series .serie a.active {
+  font-weight: 500;
+  background: #32beff;
+}
+
+.series-controls .series .serie a:hover {
+  background: #f0f0f0;
+}
+
+.series-controls .series .serie .info {
+  margin: 0 5px;
+}
+
+.series-controls .series .serie .info span {
+  display: none;
+  margin: 0 5px;
+  color: gray;
+}
+
+.series-controls .series .serie .info.hover span {
+  display: inline-block;
+}
+
+.series-controls .series .serie .info::before {
+  content: "i";
+  display: inline-block;
+  vertical-align: middle;
+  background: lightgray;
+  color: white;
+  width: 10px;
+  height: 10px;
+  line-height: 10px;
+  padding: 3px;
+  text-align: center;
+  border-radius: 50%;
+}

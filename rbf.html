@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Vector tiles POC</title>
+        <meta
+            name="viewport"
+            content="initial-scale=1,maximum-scale=1,user-scalable=no"
+        >
+        <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.3.0/mapbox-gl.js"></script>
+        <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.3.0/mapbox-gl.css" rel="stylesheet">
+        <link href="./style.css" rel="stylesheet">
+    </head>
+    <body>
+        <script>
+          window.approach = 'data-driven';
+        </script>
+        <div id="map"></div>
+        <div class="map-overlay">
+            <fieldset>
+                <input
+                    id="feature-filter"
+                    type="text"
+                    placeholder="Filter results by name"
+                >
+            </fieldset>
+            <div
+                id="feature-listing"
+                class="listing"
+            ></div>
+        </div>
+        <div class="feature-controls">
+          <div id="feature-selector" class="selector"></div>
+          <div id="feature-timeline" class="timeline"></div>
+        </div>
+        <script src="./script.js"></script>
+    </body>
+</html>

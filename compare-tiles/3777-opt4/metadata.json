@@ -1,0 +1,14 @@
+{
+"name": "../../data/output/opt/3777-opt4",
+"description": "../../data/output/opt/3777-opt4",
+"version": "2",
+"minzoom": "5",
+"maxzoom": "12",
+"center": "-4.262695,55.850642,12",
+"bounds": "-5.047637,54.843809,-3.063858,55.998911",
+"type": "overlay",
+"format": "pbf",
+"generator": "tippecanoe v1.34.3",
+"generator_options": "tippecanoe -e ../../data/output/opt/3777-opt4 -f -l geojsonLayer -Z5 -z12 '--simplification=2' --drop-densest-as-needed --drop-fraction-as-needed --drop-smallest-as-needed --coalesce-smallest-as-needed --cluster-densest-as-needed --coalesce-fraction-as-needed '--maximum-tile-bytes=250000' --no-tile-stats '--exclude=thermalsectionid' ../../data/json/for-opt/3777.json",
+"json": "{\"vector_layers\": [ { \"id\": \"geojsonLayer\", \"description\": \"\", \"minzoom\": 5, \"maxzoom\": 12, \"fields\": {\"c0\": \"Number\", \"c1\": \"Number\", \"c10\": \"Number\", \"c11\": \"Number\", \"c12\": \"Number\", \"c13\": \"Number\", \"c14\": \"Number\", \"c15\": \"Number\", \"c16\": \"Number\", \"c17\": \"Number\", \"c18\": \"Number\", \"c19\": \"Number\", \"c2\": \"Number\", \"c20\": \"Number\", \"c21\": \"Number\", \"c22\": \"Number\", \"c23\": \"Number\", \"c3\": \"Number\", \"c4\": \"Number\", \"c5\": \"Number\", \"c6\": \"Number\", \"c7\": \"Number\", \"c8\": \"Number\", \"c9\": \"Number\", \"clustered\": \"Boolean\", \"cs\": \"Number\", \"point_count\": \"Number\", \"route\": \"Number\", \"sqrt_point_count\": \"Number\", \"t0\": \"Number\", \"t1\": \"Number\", \"t10\": \"Number\", \"t11\": \"Number\", \"t12\": \"Number\", \"t13\": \"Number\", \"t14\": \"Number\", \"t15\": \"Number\", \"t16\": \"Number\", \"t17\": \"Number\", \"t18\": \"Number\", \"t19\": \"Number\", \"t2\": \"Number\", \"t20\": \"Number\", \"t21\": \"Number\", \"t22\": \"Number\", \"t23\": \"Number\", \"t3\": \"Number\", \"t4\": \"Number\", \"t5\": \"Number\", \"t6\": \"Number\", \"t7\": \"Number\", \"t8\": \"Number\", \"t9\": \"Number\", \"ts\": \"Number\"} } ]}"
+}
